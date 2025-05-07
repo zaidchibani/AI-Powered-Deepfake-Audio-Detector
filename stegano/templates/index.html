@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Fake Audio Detector</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --secondary-color: #74ebd5;
+            --accent-color: #FF6B6B;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+        }
+
+        body {
+            font-family: 'Poppins', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #74ebd5, #ACB6E5);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: var(--dark-color);
+            background-image: url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-blend-mode: overlay;
+            background-color: rgba(116, 235, 213, 0.8);
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            margin: 2rem auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+        }
+
+        .upload-box {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .upload-box:hover {
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        .custom-file-input {
+            margin: 1.5rem 0;
+            position: relative;
+        }
+
+        .file-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background-color: var(--light-color);
+            color: var(--primary-color);
+            padding: 1.2rem 2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 500;
+            border: 2px dashed #90caf9;
+            transition: all 0.3s ease;
+            width: 100%;
+            box-sizing: border-box;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-label:hover {
+            background-color: #e3f2fd;
+            transform: translateY(-2px);
+        }
+
+        .file-label i {
+            font-size: 1.5rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        button {
+            padding: 0.8rem 2rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            background-color: #357ABD;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .result-container {
+            margin-top: 1.5rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result {
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 1rem;
+            border-radius: 10px;
+            background-color: var(--light-color);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result i {
+            font-size: 1.3rem;
+        }
+
+        .success {
+            color: var(--success-color);
+            border-left: 4px solid var(--success-color);
+        }
+
+        .error {
+            color: var(--danger-color);
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .warning {
+            color: var(--warning-color);
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .audio-preview {
+            margin-top: 1.5rem;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #f1f1f1;
+            border-radius: 10px;
+            margin-top: 1.5rem;
+            overflow: hidden;
+            display: none;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 20px;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            border-radius: 10px;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: width 0.3s ease;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 1.5rem auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .file-info {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .file-info i {
+            font-size: 1rem;
+        }
+
+        .features {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 1rem;
+            border-radius: 10px;
+            width: 120px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-card.active {
+            background: rgba(74, 144, 226, 0.2);
+            border: 2px solid var(--primary-color);
+        }
+
+        .feature-card i {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card h3 {
+            font-size: 0.9rem;
+            margin: 0;
+            color: var(--dark-color);
+        }
+
+        footer {
+            margin-top: 2rem;
+            text-align: center;
+            color: white;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .upload-box {
+                padding: 1.5rem;
+            }
+            
+            .file-label {
+                padding: 1rem;
+            }
+        }
+
+        .mode-indicator {
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 0.5rem;
+            border-radius: 5px;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: none;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://cdn-icons-png.flaticon.com/512/1998/1998664.png" alt="Audio Analysis" class="logo">
+            <h1>Deep Fake Audio Detector</h1>
+            <p>Upload an audio file to check for AI-generated voice manipulation</p>
+        </div>
+
+        <div class="upload-box">
+            <form method="POST" enctype="multipart/form-data" id="detection-form">
+                {% csrf_token %}
+                <input type="hidden" name="model_type" id="model_type" value="standard">
+
+                <div class="custom-file-input">
+                    <label for="audio" class="file-label" id="file-label">
+                        <i class="fas fa-file-audio"></i>
+                        <span>Choose Audio File</span>
+                    </label>
+                    <input type="file" name="audio" id="audio" accept=".wav,.mp3,.ogg,.flac" required onchange="validateAudioFile()">
+                    <div class="file-info" id="file-info"></div>
+                </div>
+
+                <div id="audio-preview" class="audio-preview" style="display: none;">
+                    <audio controls style="width: 100%;">
+                        <source id="audio-source" src="" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+
+                <div class="progress-container" id="progress-container">
+                    <div class="progress-bar" id="progress-bar">0%</div>
+                </div>
+
+                <div class="loader" id="loader"></div>
+
+                <div class="mode-indicator" id="mode-indicator">Standard Detection Mode</div>
+
+                <button type="submit" id="submit-btn" disabled>
+                    <i class="fas fa-search"></i>
+                    Analyze Audio
+                </button>
+
+                {% if result %}
+                    <div class="result-container">
+                        <div class="result {% if 'REAL' in result %}success{% else %}error{% endif %}" id="result-box">
+                            <i class="fas {% if 'REAL' in result %}fa-check-circle{% else %}fa-exclamation-triangle{% endif %}"></i>
+                            <span>{{ result }}</span>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if error %}
+                    <div class="result-container">
+                        <div class="result error" id="result-box">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>{{ error }}</span>
+                        </div>
+                    </div>
+                {% endif %}
+            </form>
+
+            <div class="features">
+                <div class="feature-card" id="advanced-detection">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3>Advanced AI Detection</h3>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-file-upload"></i>
+                    <h3>Multiple Formats</h3>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-lock"></i>
+                    <h3>Secure Processing</h3>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2023 Deep Fake Audio Detector | Protecting Digital Authenticity</p>
+        </footer>
+    </div>
+
+    <script>
+        // Track if advanced mode is active
+        let advancedModeActive = false;
+        const advancedDetection = document.getElementById('advanced-detection');
+        const modelTypeInput = document.getElementById('model_type');
+        const modeIndicator = document.getElementById('mode-indicator');
+
+        // Toggle advanced detection mode
+        advancedDetection.addEventListener('click', function() {
+            advancedModeActive = !advancedModeActive;
+            
+            if (advancedModeActive) {
+                this.classList.add('active');
+                modelTypeInput.value = 'advanced';
+                modeIndicator.textContent = 'Advanced AI Detection Mode';
+                modeIndicator.style.display = 'block';
+                modeIndicator.style.backgroundColor = 'rgba(74, 144, 226, 0.2)';
+                modeIndicator.style.borderLeft = '4px solid var(--primary-color)';
+            } else {
+                this.classList.remove('active');
+                modelTypeInput.value = 'standard';
+                modeIndicator.textContent = 'Standard Detection Mode';
+                modeIndicator.style.display = 'block';
+                modeIndicator.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+                modeIndicator.style.borderLeft = 'none';
+            }
+        });
+
+        function validateAudioFile() {
+            const input = document.getElementById('audio');
+            const file = input.files[0];
+            const validTypes = ['audio/wav', 'audio/mpeg', 'audio/ogg', 'audio/flac'];
+            const fileInfo = document.getElementById('file-info');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            if (!file) {
+                submitBtn.disabled = true;
+                return false;
+            }
+            
+            // Check file type
+            if (!validTypes.includes(file.type)) {
+                fileInfo.innerHTML = '<i class="fas fa-times-circle"></i> Invalid file type. Please upload WAV, MP3, OGG, or FLAC.';
+                fileInfo.style.color = 'var(--danger-color)';
+                input.value = '';
+                submitBtn.disabled = true;
+                return false;
+            }
+            
+            // Check file size (limit to 25MB)
+            if (file.size > 25 * 1024 * 1024) {
+                fileInfo.innerHTML = '<i class="fas fa-times-circle"></i> File too large (max 25MB)';
+                fileInfo.style.color = 'var(--danger-color)';
+                input.value = '';
+                submitBtn.disabled = true;
+                return false;
+            }
+            
+            // Valid file
+            fileInfo.innerHTML = '<i class="fas fa-check-circle"></i> ' + (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+
+            fileInfo.style.color = 'var(--success-color)';
+            submitBtn.disabled = false;
+            
+            updateFileName();
+            return true;
+        }
+
+        function updateFileName() {
+            const input = document.getElementById('audio');
+            const label = document.getElementById('file-label').querySelector('span');
+            const resultBox = document.getElementById('result-box');
+            const audioPreview = document.getElementById('audio-preview');
+            const audioSource = document.getElementById('audio-source');
+
+            if (input.files.length > 0) {
+                const file = input.files[0];
+                label.textContent = file.name;
+                
+                // Show audio preview
+                if (file.type.startsWith('audio/')) {
+                    const audioURL = URL.createObjectURL(file);
+                    audioSource.src = audioURL;
+                    audioPreview.style.display = 'block';
+                    
+                    // Reset the audio player
+                    const audioElement = audioPreview.querySelector('audio');
+                    audioElement.load();
+                } else {
+                    audioPreview.style.display = 'none';
+                }
+            } else {
+                label.textContent = "Choose Audio File";
+                audioPreview.style.display = 'none';
+            }
+
+            // Hide result box when new audio is selected
+            if (resultBox) {
+                resultBox.style.display = 'none';
+            }
+        }
+
+        // Handle form submission with progress
+        document.getElementById('detection-form').addEventListener('submit', function(e) {
+            const file = document.getElementById('audio').files[0];
+            const progressContainer = document.getElementById('progress-container');
+            const progressBar = document.getElementById('progress-bar');
+            const submitBtn = document.getElementById('submit-btn');
+            const loader = document.getElementById('loader');
+            
+            // Show loader and disable button
+            submitBtn.disabled = true;
+            loader.style.display = 'block';
+            
+            if (file && file.size > 5 * 1024 * 1024) {
+                progressContainer.style.display = 'block';
+                
+                // Real progress updates for large files
+                const formData = new FormData(this);
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.onprogress = function(e) {
+                    if (e.lengthComputable) {
+                        const percent = (e.loaded / e.total) * 100;
+                        progressBar.style.width = percent + '%';
+                        progressBar.textContent = Math.round(percent) + '%';
+                    }
+                };
+                
+                xhr.onload = function() {
+                    if (xhr.status == 200) {
+                        // Reload the page to show results
+                        window.location.reload();
+                    }
+                };
+                
+                xhr.open('POST', '', true);
+                xhr.send(formData);
+                
+                e.preventDefault(); // Prevent default form submission
+            }
+        });
+    </script>
+</body>
+</html>
